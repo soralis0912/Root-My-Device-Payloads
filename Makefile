@@ -144,6 +144,13 @@ CORE_SRCS += $(if $(filter $(CORE),core510),\
   $(CORE_DIR)/q3slide.c \
   $(CORE_DIR)/root_stage.c)
 
+# core66's application route cannot use perf_event_open() -- Zygote's seccomp
+# filter answers it EACCES -- so it carries a minimal ADB client to reach a
+# shell that can. Bring-up only, and it says so at the top of the file: it
+# needs a key adbd already trusts and adbd already on TCP, neither of which an
+# application on a user's device can arrange.
+CORE_SRCS += $(if $(filter $(CORE),core66),$(CORE_DIR)/miniadb.c)
+
 # Which cores reach a root context of their own and so install the helper from
 # user space. core61 does not: it has the kernel exec the helper through a
 # usermodehelper work item and calls none of root_helper.c, so linking it there

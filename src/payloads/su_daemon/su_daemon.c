@@ -957,8 +957,18 @@ static int payload_runner_main(int argc, char **argv) {
    * synchronous write per payload log line, which is what the standalone route
    * has always paid ($IONSTACK_LOG opens its log the same way).
    */
+  /* NOT O_SYNC. It was, for panic-durable logs -- but on pmg110 the fsync per
+   * log line was itself the cause of the panics: the payload prints through the
+   * PI-route window where a waiter thread's pselect races a consumer thread's
+   * single sched_setattr punch, and blocking that thread on a synchronous write
+   * shifts the punch into the instant rt_mutex_adjust_prio_chain walks a
+   * half-built fake waiter, faulting before any exploit write. Measured: with
+   * O_SYNC the runner panicked on the first attempt every time (0/5) where the
+   * plain-pipe adb route landed 3/3; dropping O_SYNC lands it from the runner
+   * too. The application polls this file live regardless, so O_SYNC only ever
+   * bought durability across the very panics it was causing. */
   int log_fd =
-      open(argv[4], O_WRONLY | O_CREAT | O_TRUNC | O_SYNC | O_CLOEXEC, 0600);
+      open(argv[4], O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, 0600);
   if (log_fd < 0 || dup2(log_fd, STDOUT_FILENO) < 0 ||
       dup2(log_fd, STDERR_FILENO) < 0) {
     return errno ? errno : EIO;

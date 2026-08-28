@@ -60,7 +60,7 @@
   "kmi": "android12-5.10",
   "ddkImage": "ghcr.io/ylarod/ddk-min:android12-5.10-20260313",
   "kernelRelease": "5.10.240-g55be3759aea4",
-  "patchSets": ["devices/quest3"],
+  "patchSets": [],
   "config": [],
   "kernelSource": {
     "$comment": [
